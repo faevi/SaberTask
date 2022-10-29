@@ -31,10 +31,3 @@ using (FileStream s = File.OpenRead("test.txt"))
         list.Deserialize(s);
         Console.WriteLine(list.Count);
     }
-
-int p = 1;
-for (int i = 1; i < 30 - 1; i++)
-{
-    p = i + 1;
-}
-Console.WriteLine(p);

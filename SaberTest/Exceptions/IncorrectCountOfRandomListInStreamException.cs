@@ -1,5 +1,4 @@
-﻿using System;
-namespace SaberTest.Exceptions
+﻿namespace SaberTest.Exceptions
 {
     public class IncorrectCountOfRandomListInStreamException : Exception
     {

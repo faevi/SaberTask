@@ -1,7 +1,4 @@
-﻿using SaberTest.Exceptions;
-using System.Threading;
-
-namespace SaberTest.Models
+﻿namespace SaberTest.Models
 {
     public class ListRandom
     {

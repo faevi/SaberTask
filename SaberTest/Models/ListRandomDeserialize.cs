@@ -1,19 +1,18 @@
-﻿using System;
-using System.Reflection.Metadata.Ecma335;
-using System.Xml;
-using SaberTest.Exceptions;
+﻿using SaberTest.Exceptions;
+
 namespace SaberTest.Models
 {
     public class ListRandomDeserialize
     {
         public static void DeserializeListRandom(Stream stream, ListRandom listRandom)
         {
+            List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex;
             using (var reader = new BinaryReader(stream))
             {
                 CheckArgumentsDeserialize(stream, reader);
-                List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex = ReadListRandomFromStream(reader, listRandom);
-                ConnectAllNodes(tuplesListNodeAndRandomNodeIndex, listRandom);
+                tuplesListNodeAndRandomNodeIndex = ReadListRandomFromStream(reader, listRandom);
             }
+            ConnectAllNodes(tuplesListNodeAndRandomNodeIndex, listRandom);
         }
 
         /// <summary>

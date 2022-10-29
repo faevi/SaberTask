@@ -1,5 +1,4 @@
 ﻿using SaberTest.Exceptions;
-using System.Text;
 
 namespace SaberTest.Models
 {
