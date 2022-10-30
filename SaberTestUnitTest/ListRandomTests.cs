@@ -17,17 +17,7 @@ namespace SaberTestUnitTests
         {
             ListRandom listRandom = ListRandomToolsForTests.GenerateListRandom(count);
             ListRandom oldListRandom = ListRandomToolsForTests.CreateCopyOfListRandom(listRandom);
-
-            using (FileStream stream = File.Create("test.txt"))
-            {
-                listRandom.Serialize(stream);
-            }
-
-            using (FileStream stream = File.OpenRead("test.txt"))
-            {
-                listRandom.Deserialize(stream);
-                Assert.IsTrue(ListRandomToolsForTests.AreTwoListRandomEqual(oldListRandom, listRandom));
-            }
+            CheckSerializeDesirializeListRandom(listRandom, oldListRandom);
         }
 
         [TestMethod]
@@ -80,15 +70,50 @@ namespace SaberTestUnitTests
             ListRandom listRandom = ListRandomToolsForTests.CreateBasicListRandomCount5();
             ListRandom oldListRandom = ListRandomToolsForTests.CreateBasicListRandomCount5();
 
-            using (FileStream stream = File.Create("test1.txt"))
+            using (FileStream stream = File.Create("test.txt"))
             {
 
             }
 
-            using (FileStream stream = File.OpenRead("test1.txt"))
+            using (FileStream stream = File.OpenRead("test.txt"))
             {
                 Assert.ThrowsException<ArgumentException>(() => listRandom.Deserialize(stream));
             }
+
+            File.Delete("test.txt");
+        }
+
+        [TestMethod]
+        public void DesirializeListRandomTest_Count2_FromStream()
+        {
+            ListNode node1 = new ListNode { Data = "Hi" };
+            ListNode node2 = new ListNode { Data = "Hello", Previous = node1 };
+            node1.Next = node2;
+            node1.Random = node2;
+            node2.Random = node2;
+            
+            ListRandom oldListRandom = new ListRandom { Head = node1, Count = 2, Tail = node2 };
+            ListRandom listRandom = new ListRandom();
+
+            using (FileStream stream = File.Create("test.txt"))
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    writer.Write(2);
+                    writer.Write("Hi");
+                    writer.Write(1);
+                    writer.Write("Hello");
+                    writer.Write(1);
+                }
+            }
+
+            using (FileStream stream = File.OpenRead("test.txt"))
+            {
+                listRandom.Deserialize(stream);
+                Assert.IsTrue(ListRandomToolsForTests.AreTwoListRandomEqual(listRandom, oldListRandom));
+            }
+
+            File.Delete("test.txt");
         }
 
         /// <summary>
@@ -96,16 +121,18 @@ namespace SaberTestUnitTests
         /// </summary>
         private void CheckSerializeDesirializeListRandom(ListRandom listRandom , ListRandom oldListRandom)
         {
-            using (FileStream stream = File.Create("test1.txt"))
+            using (FileStream stream = File.Create("test.txt"))
             {
                 listRandom.Serialize(stream);
             }
 
-            using (FileStream stream = File.OpenRead("test1.txt"))
+            using (FileStream stream = File.OpenRead("test.txt"))
             {
                 listRandom.Deserialize(stream);
                 Assert.IsTrue(ListRandomToolsForTests.AreTwoListRandomEqual(oldListRandom, listRandom));
             }
+
+            File.Delete("test.txt");
         }
     }
 }
