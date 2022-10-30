@@ -75,26 +75,6 @@ namespace SaberTestUnitTests
         }
 
         [TestMethod]
-        public void SerializeDesirializeListRandomTest_IncorrentCountWhileDeserialize()
-        {
-            ListRandom listRandom = ListRandomToolsForTests.CreateBasicListRandomCount5();
-            ListRandom oldListRandom = ListRandomToolsForTests.CreateBasicListRandomCount5();
-
-            using (FileStream stream = File.Create("test1.txt"))
-            {
-                using (var writer = new BinaryWriter(stream))
-                {
-                    writer.Write(100);
-                }
-            }
-
-            using (FileStream stream = File.OpenRead("test1.txt"))
-            {   
-                Assert.ThrowsException<IncorrectCountOfRandomListInStreamException>(() => listRandom.Deserialize(stream));
-            }
-        }
-
-        [TestMethod]
         public void SerializeDesirializeListRandomTest_EmptyStream()
         {
             ListRandom listRandom = ListRandomToolsForTests.CreateBasicListRandomCount5();
@@ -102,7 +82,7 @@ namespace SaberTestUnitTests
 
             using (FileStream stream = File.Create("test1.txt"))
             {
-                listRandom.Serialize(stream);
+
             }
 
             using (FileStream stream = File.OpenRead("test1.txt"))
