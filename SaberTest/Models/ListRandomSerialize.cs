@@ -1,4 +1,4 @@
-﻿using SaberTest.Exceptions;
+﻿    using SaberTest.Exceptions;
 
 namespace SaberTest.Models
 {
@@ -68,18 +68,9 @@ namespace SaberTest.Models
         /// </summary>
         private static void WriteNodeToStream(BinaryWriter writer, ListNode listNode, Dictionary<ListNode, int> listNodeToNodeIndex)
         {
-            int nullFlag = -2;
-            int randomNodeIndex = listNode.Random is not null ? listNodeToNodeIndex[listNode.Random] : nullFlag;
-
-            if (listNode.Data is not null)
-            {
-                writer.Write(listNode.Data);
-            }
-            else
-            {
-                writer.Write(nullFlag);
-            }
-
+            int randomNodeIndex = listNode.Random is not null ? listNodeToNodeIndex[listNode.Random] : -1;
+            string data = listNode.Data is not null ? listNode.Data : "Nullable";
+            writer.Write(data);
             writer.Write(randomNodeIndex);
         }   
 

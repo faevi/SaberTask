@@ -1,4 +1,5 @@
-﻿using SaberTest.Exceptions;
+﻿using System.IO;
+using SaberTest.Exceptions;
 
 namespace SaberTest.Models
 {
@@ -7,25 +8,22 @@ namespace SaberTest.Models
         public static void DeserializeListRandom(Stream stream, ListRandom listRandom)
         {
             List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex;
-            using (var reader = new BinaryReader(stream))
-            {
-                CheckArgumentsDeserialize(stream, reader);
-                tuplesListNodeAndRandomNodeIndex = ReadListRandomFromStream(reader, listRandom);
-            }
+            CheckArgumentsDeserialize(stream);
+            tuplesListNodeAndRandomNodeIndex = ReadListRandomFromStream(stream, listRandom);
             ConnectAllNodes(tuplesListNodeAndRandomNodeIndex, listRandom);
         }
 
         /// <summary>
         /// Check input data for deserialization
         /// </summary>
-        private static void CheckArgumentsDeserialize(Stream stream, BinaryReader reader)
+        private static void CheckArgumentsDeserialize(Stream stream)
         {
             if (!stream.CanRead)
             {
                 throw new ArgumentException("Ureadable stream!");
             }
 
-            if (reader.PeekChar() <= 0)
+            if (stream.Length == 0)
             {
                 throw new ArgumentException("Empty stream!");
             }
@@ -34,22 +32,26 @@ namespace SaberTest.Models
         /// <summary>
         /// Updating a ListRandom from a stream 
         /// </summary>
-        private static List<Tuple<ListNode, int>> ReadListRandomFromStream(BinaryReader reader, ListRandom listRandom)
+        private static List<Tuple<ListNode, int>> ReadListRandomFromStream(Stream stream, ListRandom listRandom)
         {
-            int count = reader.ReadInt32();
-            listRandom.Count = count;
-            List<Tuple<ListNode,int>> tuplesListNodeAndRandomNodeIndex = new List<Tuple<ListNode, int>>(count);
-
-            for (int nodeIndex = 0; nodeIndex < count ; nodeIndex++)
+            using (var reader = new BinaryReader(stream))
             {
-                ReadNodeFromStream(reader, nodeIndex, count, tuplesListNodeAndRandomNodeIndex);
-            }
+                int count = reader.ReadInt32();
+                listRandom.Count = count;
+                List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex = new List<Tuple<ListNode, int>>(count);
 
-            if(reader.PeekChar() != -1)
-            {
-                throw new IncorrectCountOfRandomListInStreamException("Wrong Count of ListRandom in stream");
+                for (int nodeIndex = 0; nodeIndex < count; nodeIndex++)
+                {
+                    ReadNodeFromStream(reader, nodeIndex, count, tuplesListNodeAndRandomNodeIndex);
+                }
+
+                if (reader.PeekChar() != -1)
+                {
+                    throw new IncorrectCountOfRandomListInStreamException("Wrong Count of ListRandom in stream");
+                }
+
+                return tuplesListNodeAndRandomNodeIndex;
             }
-            return tuplesListNodeAndRandomNodeIndex;
         }
 
 
@@ -66,6 +68,8 @@ namespace SaberTest.Models
                 ConnectTwoNodes(tuplesListNodeAndRandomNodeIndex[tupleIndex].Item1, tuplesListNodeAndRandomNodeIndex[tupleIndex + 1].Item1);
                 ConnectNodeWithRandomNode(tuplesListNodeAndRandomNodeIndex, tupleIndex);
             }
+
+            ConnectNodeWithRandomNode(tuplesListNodeAndRandomNodeIndex,listRandom.Count - 1);
         }
 
         /// <summary>
@@ -75,7 +79,7 @@ namespace SaberTest.Models
         {
             int randomNodeNumber = tuplesListNodeAndRandomNodeIndex[nodeIndex].Item2;
 
-            if (randomNodeNumber == -2)
+            if (randomNodeNumber == -1)
             {
                 return;
             }
@@ -97,39 +101,15 @@ namespace SaberTest.Models
         /// </summary>
         private static ListNode ReadNodeFromStream(BinaryReader reader, int nodeIndex, int count, List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex)
         {
-            ListNode listNode = new ListNode() { Data = null};
-            int randomNodeIndex = -2;
+            string data = reader.ReadString();
+            int randomNodeIndex = reader.ReadInt32();
 
-            for (int stepNumber = 0; stepNumber < 2; stepNumber++)
+            if (randomNodeIndex >= count)
             {
-                int nextChar = reader.PeekChar();
-
-                if (nextChar is -1)
-                {
-                    throw new EmptyStreamWhileReadingNodeException("Empty stream while reading Data");
-                }
-                else if (nextChar is -2)
-                {
-                    reader.ReadInt32();
-                }
-                else
-                {
-                    if (stepNumber == 0)
-                    {
-                        listNode.Data = reader.ReadString();
-                    }
-                    else
-                    {
-                        randomNodeIndex = reader.ReadInt32();
-
-                        if (randomNodeIndex >= count)
-                        {
-                            throw new IndexOutOfRangeException($"Index = {randomNodeIndex} of RandomNode for ListNode with index {nodeIndex} more than ListRandom Count = {count}");
-                        }
-                    }
-                }
+                throw new IndexOutOfRangeException($"Index = {randomNodeIndex} of RandomNode for ListNode with index {nodeIndex} more than ListRandom Count = {count}");
             }
-
+           
+            ListNode listNode = new ListNode() { Data = data != "Nullable" ? data : null};
             tuplesListNodeAndRandomNodeIndex.Add(new Tuple<ListNode,int>(listNode, randomNodeIndex));
             return listNode;
         }
