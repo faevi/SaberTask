@@ -5,12 +5,28 @@ namespace SaberTest.Models
 {
     public class ListRandomDeserialize
     {
+        private struct NodeConnectionInfo
+        {
+            public NodeConnectionInfo(int NodeIndex, int RandomNodeIndex, int NextNodeIndex, int PrevNodeIndex)
+            {
+                nodeIndex = NodeIndex;
+                nextNodeIndex = NextNodeIndex;
+                prevNodeIndex = PrevNodeIndex;
+                randomNodeIndex = RandomNodeIndex;
+            }
+
+            public int nodeIndex;
+            public int nextNodeIndex;
+            public int prevNodeIndex;
+            public int randomNodeIndex;
+        }
+
         public static void DeserializeListRandom(Stream stream, ListRandom listRandom)
         {
-            List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex;
+            Dictionary<ListNode, NodeConnectionInfo> listNodeToNodeConnectioInfo;
             CheckArgumentsDeserialize(stream);
-            tuplesListNodeAndRandomNodeIndex = ReadListRandomFromStream(stream, listRandom);
-            ConnectAllNodes(tuplesListNodeAndRandomNodeIndex, listRandom);
+            listNodeToNodeConnectioInfo = ReadListRandomFromStream(stream, listRandom);
+            ConnectAllNodes(listNodeToNodeConnectioInfo, listRandom);
         }
 
         /// <summary>
@@ -32,85 +48,86 @@ namespace SaberTest.Models
         /// <summary>
         /// Updating a ListRandom from a stream 
         /// </summary>
-        private static List<Tuple<ListNode, int>> ReadListRandomFromStream(Stream stream, ListRandom listRandom)
+        private static Dictionary<ListNode, NodeConnectionInfo> ReadListRandomFromStream(Stream stream, ListRandom listRandom)
         {
             using (var reader = new BinaryReader(stream))
             {
                 int count = reader.ReadInt32();
                 listRandom.Count = count;
-                List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex = new List<Tuple<ListNode, int>>(count);
+                Dictionary<ListNode, NodeConnectionInfo> listNodeToNodeConnectioInfo = new Dictionary<ListNode, NodeConnectionInfo>();
 
                 for (int nodeIndex = 0; nodeIndex < count; nodeIndex++)
                 {
-                    ReadNodeFromStream(reader, nodeIndex, count, tuplesListNodeAndRandomNodeIndex);
+                    ReadNodeFromStream(reader, listNodeToNodeConnectioInfo);
                 }
 
                 if (reader.PeekChar() != -1)
                 {
-                    throw new IncorrectCountOfRandomListInStreamException("Wrong Count of ListRandom in stream");
+                    throw new IncorrectCountListRanodmException("Wrong Count of ListRandom in stream");
                 }
 
-                return tuplesListNodeAndRandomNodeIndex;
+                return listNodeToNodeConnectioInfo;
             }
         }
 
+        /// <summary>
+        /// Create dictionary index nodes to nodes to optimize searching nodes while connection
+        /// </summary>
+        private static Dictionary<int, ListNode> CreateDictionaruIndexNodesToListNodes(Dictionary<ListNode, NodeConnectionInfo> listNodeToNodeConnectioInfo)
+        {
+            Dictionary<int, ListNode> indexNodesToListNodes = new Dictionary<int, ListNode>();
+
+            foreach (KeyValuePair<ListNode, NodeConnectionInfo> pair in listNodeToNodeConnectioInfo)
+            {
+                indexNodesToListNodes.Add(pair.Value.nodeIndex, pair.Key);
+            }
+
+            return indexNodesToListNodes;
+        }
 
         /// <summary>
         /// Create dependencies between Nodes in ListRandom
         /// </summary>
-        private static void ConnectAllNodes(List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex, ListRandom listRandom)
+        private static void ConnectAllNodes(Dictionary<ListNode, NodeConnectionInfo> listNodeToNodeConnectioInfo, ListRandom listRandom)
         {
-            listRandom.Head = tuplesListNodeAndRandomNodeIndex.First().Item1;
-            listRandom.Tail = tuplesListNodeAndRandomNodeIndex.Last().Item1;
+            Dictionary<int, ListNode> indexNodesToListNodes = CreateDictionaruIndexNodesToListNodes(listNodeToNodeConnectioInfo);
+            listRandom.Head = indexNodesToListNodes[0];
+            listRandom.Tail = indexNodesToListNodes[listNodeToNodeConnectioInfo.Count - 1];
+            ListNode tempNode;
+            NodeConnectionInfo tempNodeConnectionInfo;
 
-            for (int tupleIndex = 0; tupleIndex < tuplesListNodeAndRandomNodeIndex.Count - 1; tupleIndex++)
+            foreach (KeyValuePair<ListNode, NodeConnectionInfo> listNodeToNodeConnectionInfo in listNodeToNodeConnectioInfo)
             {
-                ConnectTwoNodes(tuplesListNodeAndRandomNodeIndex[tupleIndex].Item1, tuplesListNodeAndRandomNodeIndex[tupleIndex + 1].Item1);
-                ConnectNodeWithRandomNode(tuplesListNodeAndRandomNodeIndex, tupleIndex);
+                ConnectNode(listNodeToNodeConnectionInfo, indexNodesToListNodes);
             }
-
-            ConnectNodeWithRandomNode(tuplesListNodeAndRandomNodeIndex,listRandom.Count - 1);
         }
 
         /// <summary>
-        /// Create Dependency between a node and its random one
+        /// Create dependencies in Node with others
         /// </summary>
-        private static void ConnectNodeWithRandomNode(List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex, int nodeIndex)
+        private static void ConnectNode(KeyValuePair<ListNode, NodeConnectionInfo> listNodeToNodeConnectionInfo, Dictionary<int, ListNode> indexNodesToListNodes)
         {
-            int randomNodeNumber = tuplesListNodeAndRandomNodeIndex[nodeIndex].Item2;
+            ListNode listNode = listNodeToNodeConnectionInfo.Key;
+            NodeConnectionInfo nodeConnectionInfo = listNodeToNodeConnectionInfo.Value;
 
-            if (randomNodeNumber == -1)
-            {
-                return;
-            }
-
-            tuplesListNodeAndRandomNodeIndex[nodeIndex].Item1.Random = tuplesListNodeAndRandomNodeIndex[randomNodeNumber].Item1;
-        }
-
-        /// <summary>
-        /// Create Dependency between a node and next node
-        /// </summary>
-        private static void ConnectTwoNodes(ListNode firstNode, ListNode secondNode)
-        {
-            firstNode.Next = secondNode;
-            secondNode.Previous = firstNode;
+            listNode.Next = nodeConnectionInfo.nextNodeIndex != -1 ? indexNodesToListNodes[nodeConnectionInfo.nextNodeIndex] : null;
+            listNode.Previous = nodeConnectionInfo.prevNodeIndex != -1 ? indexNodesToListNodes[nodeConnectionInfo.prevNodeIndex] : null;
+            listNode.Random = nodeConnectionInfo.randomNodeIndex != -1 ? indexNodesToListNodes[nodeConnectionInfo.randomNodeIndex] : null;
         }
 
         /// <summary>
         /// Read node from stream
         /// </summary>
-        private static ListNode ReadNodeFromStream(BinaryReader reader, int nodeIndex, int count, List<Tuple<ListNode, int>> tuplesListNodeAndRandomNodeIndex)
+        private static ListNode ReadNodeFromStream(BinaryReader reader, Dictionary<ListNode, NodeConnectionInfo> listNodeToNodeConnectioInfo)
         {
             string data = reader.ReadString();
+            int nodeIndex = reader.ReadInt32();
             int randomNodeIndex = reader.ReadInt32();
-
-            if (randomNodeIndex >= count)
-            {
-                throw new IndexOutOfRangeException($"Index = {randomNodeIndex} of RandomNode for ListNode with index {nodeIndex} more than ListRandom Count = {count}");
-            }
-           
+            int nextNodeIndex = reader.ReadInt32();
+            int prevNodeIndex = reader.ReadInt32();
+            NodeConnectionInfo nodeConnectionInfo = new NodeConnectionInfo(nodeIndex, randomNodeIndex, nextNodeIndex, prevNodeIndex);
             ListNode listNode = new ListNode() { Data = data != "Nullable" ? data : null};
-            tuplesListNodeAndRandomNodeIndex.Add(new Tuple<ListNode,int>(listNode, randomNodeIndex));
+            listNodeToNodeConnectioInfo.Add(listNode, nodeConnectionInfo);
             return listNode;
         }
     }

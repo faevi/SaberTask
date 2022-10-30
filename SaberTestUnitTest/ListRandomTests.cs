@@ -9,7 +9,7 @@ namespace SaberTestUnitTests
     {
         [DataTestMethod]
         [DataRow(21)]
-        [DataRow(500)]
+        [DataRow(1000)]
         [DataRow(56)]
         [DataRow(5)]
         [DataRow(2)]
@@ -45,9 +45,9 @@ namespace SaberTestUnitTests
         {
             ListRandom listRandom = ListRandomToolsForTests.CreateBasicListRandomCount5();
             listRandom.Head.Next.Next = listRandom.Head;
-            ListRandom oldListRandom = ListRandomToolsForTests.CreateBasicListRandomCount5();
+            ListRandom oldListRandom = ListRandomToolsForTests.CreateCopyOfListRandom(listRandom);
 
-            Assert.ThrowsException<LoopDetectedException>(() => CheckSerializeDesirializeListRandom(listRandom, oldListRandom));
+            CheckSerializeDesirializeListRandom(listRandom, oldListRandom);
         }
 
         [TestMethod]
@@ -61,7 +61,7 @@ namespace SaberTestUnitTests
             ListRandom listRandom = new ListRandom { Head = node, Count = 1, Tail = node };
             ListRandom oldListRandom = ListRandomToolsForTests.CreateCopyOfListRandom(listRandom);
 
-            Assert.ThrowsException<LoopDetectedException>(() => CheckSerializeDesirializeListRandom(listRandom, oldListRandom));
+            CheckSerializeDesirializeListRandom(listRandom, oldListRandom);
         }
 
         [TestMethod]
@@ -78,39 +78,6 @@ namespace SaberTestUnitTests
             using (FileStream stream = File.OpenRead("test.txt"))
             {
                 Assert.ThrowsException<ArgumentException>(() => listRandom.Deserialize(stream));
-            }
-
-            File.Delete("test.txt");
-        }
-
-        [TestMethod]
-        public void DesirializeListRandomTest_Count2_FromStream()
-        {
-            ListNode node1 = new ListNode { Data = "Hi" };
-            ListNode node2 = new ListNode { Data = "Hello", Previous = node1 };
-            node1.Next = node2;
-            node1.Random = node2;
-            node2.Random = node2;
-            
-            ListRandom oldListRandom = new ListRandom { Head = node1, Count = 2, Tail = node2 };
-            ListRandom listRandom = new ListRandom();
-
-            using (FileStream stream = File.Create("test.txt"))
-            {
-                using (var writer = new BinaryWriter(stream))
-                {
-                    writer.Write(2);
-                    writer.Write("Hi");
-                    writer.Write(1);
-                    writer.Write("Hello");
-                    writer.Write(1);
-                }
-            }
-
-            using (FileStream stream = File.OpenRead("test.txt"))
-            {
-                listRandom.Deserialize(stream);
-                Assert.IsTrue(ListRandomToolsForTests.AreTwoListRandomEqual(listRandom, oldListRandom));
             }
 
             File.Delete("test.txt");

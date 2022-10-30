@@ -1,4 +1,4 @@
-﻿    using SaberTest.Exceptions;
+﻿using SaberTest.Exceptions;
 
 namespace SaberTest.Models
 {
@@ -22,27 +22,23 @@ namespace SaberTest.Models
         /// </summary>
         private static Dictionary<ListNode,int> GetListNodeToNodeIndex (ListRandom listRandom)
         {
-            ListNode head = listRandom.Head;
-            ListNode tail = listRandom.Tail;
             Dictionary<ListNode, int> listNodeToNodeIndex = new Dictionary<ListNode, int>();
-            ListNode tempNode = head;
+            ListNode tempNode = listRandom.Head;
             int nodeIndex = 0;
 
-            do
+            while (tempNode is not null)
             {
                 listNodeToNodeIndex.Add(tempNode, nodeIndex++);
                 tempNode = tempNode.Next;
 
-                if (listNodeToNodeIndex.ContainsKey(tempNode))
+                if (tempNode is null || listNodeToNodeIndex.ContainsKey(tempNode))
                 {
-                    throw new LoopDetectedException("Looped list, serialization not possible", nodeIndex);
+                    AddNodesFromTail(listNodeToNodeIndex, listRandom);
+                    break;
                 }
-            }
-            while (tempNode != tail);
+            } 
 
-            listNodeToNodeIndex.Add(tempNode, nodeIndex);
-
-            if (nodeIndex > listRandom.Count)
+            if (listNodeToNodeIndex.Count != listRandom.Count)
             {
                 throw new ArgumentException($"Incorrect Count: {listRandom.Count}, number of nodes in list {nodeIndex}");
             }
@@ -50,13 +46,28 @@ namespace SaberTest.Models
             return listNodeToNodeIndex;
         }
 
-        
+        /// <summary>
+        /// Add Nodes from tail if loop detected
+        /// </summary>
+        private static void AddNodesFromTail(Dictionary<ListNode, int> listNodeToNodeIndex, ListRandom listRandom)
+        {
+            ListNode tempNode = listRandom.Tail;
+            int nodeIndex = listRandom.Count - 1;
+
+            while (tempNode != null && !listNodeToNodeIndex.ContainsKey(tempNode))
+            {
+                listNodeToNodeIndex.Add(tempNode, nodeIndex--);
+                tempNode = tempNode.Previous;
+            }
+        }
+
         /// <summary>
         /// This method ad ListRandom to stream in binary format
         /// </summary>
         private static void AddBinaryListRandomToStream(Dictionary<ListNode, int> listNodeToNodeIndex, BinaryWriter writer, int Count)
         {
             writer.Write(Count);
+
             foreach (KeyValuePair<ListNode, int> listNodeIndexPair in listNodeToNodeIndex)
             {
                 WriteNodeToStream(writer, listNodeIndexPair.Key, listNodeToNodeIndex);
@@ -69,9 +80,15 @@ namespace SaberTest.Models
         private static void WriteNodeToStream(BinaryWriter writer, ListNode listNode, Dictionary<ListNode, int> listNodeToNodeIndex)
         {
             int randomNodeIndex = listNode.Random is not null ? listNodeToNodeIndex[listNode.Random] : -1;
+            int nextNodeIndex = listNode.Next is not null ? listNodeToNodeIndex[listNode.Next] : -1;
+            int prevNodeIndex = listNode.Previous is not null ? listNodeToNodeIndex[listNode.Previous] : -1;
+            int nodeIndex = listNodeToNodeIndex[listNode];
             string data = listNode.Data is not null ? listNode.Data : "Nullable";
             writer.Write(data);
+            writer.Write(nodeIndex);
             writer.Write(randomNodeIndex);
+            writer.Write(nextNodeIndex);
+            writer.Write(prevNodeIndex);
         }   
 
         /// <summary>

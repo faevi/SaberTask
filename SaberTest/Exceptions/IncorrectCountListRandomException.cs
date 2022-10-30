@@ -1,8 +1,8 @@
 ﻿namespace SaberTest.Exceptions
 {
-    public class IncorrectCountOfRandomListInStreamException : Exception
+    public class IncorrectCountListRanodmException : Exception
     {
-        public IncorrectCountOfRandomListInStreamException(string massege) : base(massege)
+        public IncorrectCountListRanodmException(string massege) : base(massege)
         {
         }
     }
