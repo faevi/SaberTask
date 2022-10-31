@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using SaberTest.Models;
+﻿using SaberTest.Models;
 using SaberTest.Exceptions;
 
 namespace SaberTestUnitTests

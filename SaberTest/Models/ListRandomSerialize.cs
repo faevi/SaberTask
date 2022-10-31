@@ -15,6 +15,7 @@ namespace SaberTest.Models
             {
                 AddBinaryListRandomToStream(listNodeToNodeIndex, writer, listRandom.Count);
             }
+            stream.Close();
         }
 
         /// <summary>
@@ -113,4 +114,3 @@ namespace SaberTest.Models
         }
     }
 }
-

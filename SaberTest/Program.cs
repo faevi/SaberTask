@@ -5,6 +5,9 @@ namespace SaberTest
 {
     internal class Program
     {
+        /// <summary>
+        /// This Sample shows serialize and desirialize List Random with Loop
+        /// </summary>
         public static void Main(string[] args)
         {
             ListRandom listRandom = ListRandomConsoleDisplayer.CreateConsoleTestListRandom();

@@ -26,6 +26,7 @@ namespace SaberTest.Models
             Dictionary<ListNode, NodeConnectionInfo> listNodeToNodeConnectioInfo;
             CheckArgumentsDeserialize(stream);
             listNodeToNodeConnectioInfo = ReadListRandomFromStream(stream, listRandom);
+            stream.Close();
             ConnectAllNodes(listNodeToNodeConnectioInfo, listRandom);
         }
 
@@ -132,4 +133,3 @@ namespace SaberTest.Models
         }
     }
 }
-
